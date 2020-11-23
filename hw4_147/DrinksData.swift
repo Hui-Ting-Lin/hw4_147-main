@@ -8,8 +8,6 @@
 import SwiftUI
 
 class DrinksData: ObservableObject{
-    
-    
     @AppStorage("drinks") var drinksData: Data?
     @Published var total = 0
     @Published var selectDate = ""
@@ -44,13 +42,10 @@ class DrinksData: ObservableObject{
                 }
             }
         }
-        print(totals)
         return totalsArray
     }
 
     func caculateTotal( _ num: Int, selectDate: String){
-        print("qqqqqqq")
-        print(num)
         totals = [0,0,0,0,0,0,0]
         for num in 0..<dayArray.count{
             for drink in drinks {
@@ -60,7 +55,6 @@ class DrinksData: ObservableObject{
             }
         }
         total = totals[6]
-        print(totals)
     }
     
 

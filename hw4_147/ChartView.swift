@@ -16,23 +16,20 @@ func getDate(selectedDate:Date)->String{
 
 
 struct ChartView: View {
-    @StateObject var drinksData = DrinksData()
+    //@StateObject var drinksData = DrinksData()
+    @EnvironmentObject var drinksData: DrinksData
     @State private var today = Date()
+    @State private var dayString = getDate(Date())
+    @AppStorage("target") private var target = 0
    
     var body: some View {
         VStack{
-            MyChartView(dayArray: drinksData.dayArray, totalArray:drinksData.getTotal())
-            ForEach(drinksData.drinks.indices, id : \.self){(index) in
-                DrinkRow(drink: drinksData.drinks[index])
-                
-            }
+            MyChartView(dayArray: drinksData.dayArray, totalArray:drinksData.getTotal(), target: target, dayString: $dayString)
+                .frame(height: 500)
+            ListView(dayString: $dayString)
         }
-        
-        .onTapGesture(count: /*@START_MENU_TOKEN@*/1/*@END_MENU_TOKEN@*/, perform: {
-            print("99999")
-            drinksData.caculateTotal(543, selectDate: getDate(Date()))
-        })
     }
+    
 }
 
 
@@ -48,6 +45,10 @@ struct BarView: View {
     var txt: String
     var color: Color
 
+    @State var grow: Bool = false
+    @State private var length = 0
+    
+
     var body: some View {
         VStack{
             Text("\(Int(percentage*100))%")
@@ -58,19 +59,34 @@ struct BarView: View {
                 
                 RoundedRectangle(cornerRadius: 12)
                     .frame(width: 30, height: 225)
-                    .foregroundColor(Color(#colorLiteral(red: 0.721724689, green: 0.879203558, blue: 0.8636844754, alpha: 1)))
+                    .foregroundColor(Color(UIColor.systemTeal))
+                    .opacity(0.3)
 
                 RoundedRectangle(cornerRadius: 12)
                     .frame(width: 30, height: (225*percentage))
                     .foregroundColor(color)
-                
+
             }
             Text(txt)
                 .padding(.top, 2)
                 .font(.system(size: 12))
                 .frame(width:35)
-            
-            
+     
+        }
+    }
+    
+    struct AnimatableLength: AnimatableModifier {
+        var length: CGFloat
+        var width: CGFloat
+
+        var animatableData: CGFloat {
+            get { length }
+            set { length = newValue }
+        }
+
+        func body(content: Content) -> some View {
+            content
+                .frame(width: width, height: length)
         }
     }
 }
@@ -78,25 +94,82 @@ struct BarView: View {
 struct MyChartView: View {
     var dayArray: Array<String>
     var totalArray: Array<Int>
+    var target: Int
+    @Binding var dayString: String
     
     var body: some View {
         
         VStack{
             Text("Weekly Review")
+                .font(.system(size: 20))
+                .foregroundColor(.black)
+                .padding(.bottom, 3)
+                .background(Color(red: 196/255, green: 255/255, blue: 249/255))
             Text("\(dayArray[0]) - \(dayArray[6])")
+                .background(Color(red: 196/255, green: 255/255, blue: 249/255))
+                .foregroundColor(.black)
             HStack{
                 ForEach(0..<dayArray.count){(index) in
                     if(dayArray[index]==getDate(Date())){
-                        BarView(percentage: CGFloat(totalArray[index])/3000 <= 1 ? CGFloat(totalArray[index])/3000 : 1 , txt: "\(dayArray[index])", color:  Color(#colorLiteral(red: 0.949680388, green: 0.7101557851, blue: 0.7510160804, alpha: 1)))
+                        BarView(percentage: CGFloat(totalArray[index])/CGFloat(target) <= 1 ? CGFloat(totalArray[index])/CGFloat(target) : 1 , txt: "\(dayArray[index])", color:  Color(red: 255/255, green: 202/255, blue: 212/255))
+                            .onTapGesture(count: 1, perform: {
+                                dayString = dayArray[index]
+                            })
+                        
                     }//today: special color
                     else{
-                        BarView(percentage: CGFloat(totalArray[index])/3000 <= 1 ? CGFloat(totalArray[index])/3000 : 1 , txt: "\(dayArray[index])", color:  Color(#colorLiteral(red: 0.9651429253, green: 0.9673617344, blue: 0.8636844754, alpha: 1)))
+                        BarView(percentage: CGFloat(totalArray[index])/CGFloat(target) <= 1 ? CGFloat( totalArray[index])/CGFloat(target) : 1 , txt: "\(dayArray[index])", color:  Color(red: 255/255, green: 230/255, blue: 167/255))
+                            .onTapGesture(count: 1, perform: {
+                                dayString = dayArray[index]
+                            })
                     }
-                    
                 }
+                
             }
             .padding(.top, 24)
         }
 
+    }
+}
+
+struct ListView: View {
+    @Binding var dayString: String
+    @EnvironmentObject var drinksData: DrinksData
+    var body: some View {
+        List{
+            Section(header:CustomHeader(
+                        name: "\(dayString)'s drinks",
+                        color: Color(red: 196/255, green: 255/255, blue: 249/255))){
+                ForEach(drinksData.drinks.indices, id : \.self){(index) in
+                    if(drinksData.drinks[index].day == dayString){
+                        DrinkRow(drink: drinksData.drinks[index])
+                        
+                    }
+                    
+                }
+            }
+        }
+        .animation(.default)
+    }
+}
+struct CustomHeader: View {
+    let name: String
+    let color: Color
+
+    var body: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Text(name)
+                    .foregroundColor(.black)
+                Spacer()
+            }
+            Spacer()
+        }
+        
+        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+        .background(color)
+        
     }
 }

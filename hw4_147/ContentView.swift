@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    
+    //@EnvironmentObject var drinksData: DrinksData
+    //var drinksData = DrinksData()
+    @StateObject var drinksData = DrinksData()
     var body: some View {
         TabView{
             
@@ -24,6 +26,7 @@ struct ContentView: View {
                 }
                 
         }
+        .environmentObject(drinksData)
 
     }
 }
